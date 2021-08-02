@@ -26,7 +26,8 @@ public class ShorturlApplication extends AbstractMongoClientConfiguration{
 	
     @Override
     public MongoClient mongoClient() {
-        ConnectionString connectionString = new ConnectionString("mongodb://192.168.1.5:27017/shorturl");
+//        ConnectionString connectionString = new ConnectionString("mongodb://192.168.1.5:27017/shorturl");
+        ConnectionString connectionString = new ConnectionString("mongodb://127.0.0.1:27017/shorturl");
         MongoClientSettings mongoClientSettings = MongoClientSettings.builder()
             .applyConnectionString(connectionString)
             .build();
