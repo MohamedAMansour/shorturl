@@ -1,1 +1,128 @@
-sample read me file
+Project requirements: (test coverage for the service layer 85%)
+
+1- MongoDB.
+2- Local docker deamon.
+
+Configuring mongoDB connection:
+======================================
+in ShorturlApplication the connection url is hard coded to         
+ConnectionString connectionString = new ConnectionString("mongodb://192.168.1.5:27017/shorturl");
+in case of local MongoDB , and running the app locally (not as a docker image) , change the connection string to 
+ConnectionString connectionString = new ConnectionString("mongodb://localhost:27017/shorturl");
+in case running the application within docker , you will need to set the above url to correct local interface (make sure mongodb is bind to the correct IP).
+
+
+to run the application , not dockerized 
+    1) clone the repo
+    2) mvn clean package
+    2) java -jar target/shorturl-0.0.1-SNAPSHOT.jar
+    
+to run dockerized version , change the connection url in the ShorturlApplication to the proper mongodb IP address.
+
+
+====================================================================================================================================
+for running the application using curl:
+1- Creating a new shorturl for investing.com
+curl -X POST http://localhost:8080/shorturls   -H "Content-Type: application/json"   --data-binary "@./src/main/resources/shorturl.json"
+
+where the content of the shorturl.json (sample shorturl.json is included with the project source)
+{
+  "targetUrl" : "http://investing.com",
+  "statsOn" : true
+}
+
+response will be:
+{
+  "shortcutEntry": {
+    "id": "6107a207b153d01b48b19aa2",
+    "url": "eoHAux",      =====> auto generated short url 
+    "destinationUrl": "http://investing.com",
+    "nofTimesAccessed": 1
+  },
+  "errorCode": "4001"   ======> if error code is set to 4001 , that means there is already a shorturl created previously for the url.
+}
+
+in that case a collection called shortcutEntry will be created in the mongodb database named "shorturl"
+{
+	"_id" : ObjectId("6107a166b153d01b48b19aa1"),
+	"url" : "eoHArs",                           ===> shortcut name , will be accessed by http://localhost:8080/eoHArs
+	"destinationUrl" : "http://investing.com",
+	"nOfTimesAccessed" : NumberLong(0),         ===> this field will be increamented each time a user access the short cut
+	"_class" : "com.ir.shorturl.domain.ShortcutEntry"
+}
+
+2- run the browser with this url http://localhost:8080/eoHArs and you will be directed to investing.com and the below collection will be updated
+{
+	"_id" : ObjectId("6107a166b153d01b48b19aa1"),
+	"url" : "eoHArs",
+	"destinationUrl" : "http://investing.com",
+	"nOfTimesAccessed" : NumberLong(1),               ========>increamented by 1 cause of the access that happened
+	"_class" : "com.ir.shorturl.domain.ShortcutEntry"
+}
+and other collection entry is created per user ip address:
+
+{
+	"_id" : ObjectId("6107a18d1f64941bb1a454b7"),
+	"clientIP" : "172.17.0.1",      =============> client ip address
+	"url" : "eoHArs",               ============>  shorturl 
+	"nOfHists" : NumberLong(2)      ============>  accessed 2 times by that client
+}
+
+3- for getting all configured shorturls , run get against this url curl http://localhost:8080/urlstatistics 
+[
+  {
+    "id": "6107a0bb090cbb10c157d409",
+    "url": "eoHAod",
+    "destinationUrl": "https://google",
+    "nofTimesAccessed": 0
+  },
+  {
+    "id": "6107a166b153d01b48b19aa1",
+    "url": "eoHArs",
+    "destinationUrl": "http://investing.com",
+    "nofTimesAccessed": 2
+  },
+  {
+    "id": "6107a207b153d01b48b19aa2",
+    "url": "eoHAux",
+    "destinationUrl": "http://msn.com",
+    "nofTimesAccessed": 1
+  }
+]
+
+4- for getting user statistics.
+curl http://localhost:8080/clienstatistics
+  {
+    "id": "6107a18d1f64941bb1a454b7",
+    "clientIP": "172.17.0.1",
+    "url": "eoHArs",
+    "nofHists": 2
+  },
+  {
+    "id": "6107a21a1f64941bb1a454f5",
+    "clientIP": "172.17.0.1",
+    "url": "eoHAux",
+    "nofHists": 1
+  }
+
+5- In case of wrong/unconfigured url , you will recieve an HTML error page as below 
+curl http://localhost:8080/9090
+
+<!DOCTYPE HTML>
+<html>
+<head> 
+    <title>WHO! short url utility </title> 
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+</head>
+<body>
+    <p >wrong url was entered!!  9090!</p>
+    
+</body>
+</html>
+==============================================================================================================
+
+
+
+
+
+
